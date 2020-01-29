@@ -152,7 +152,7 @@ for(i in (Ntip(annot_tree) + 1):(annot_tree$Nnode + Ntip(annot_tree))) {
 }
 ```
 
-Yes, our HPDs are clearly horrifyingly wide, but they are also not associated with the right nodes -- in fact, they are not associated with any *nodes*, and instead just float freely over the tree. What's happening here?
+Yes, our HPDs are clearly horrifyingly wide, but they are also not associated with the right nodes -- in fact, they are not associated with *any* nodes, and instead just float freely over the tree. What's happening here?
 
 The answer is that the HPDs are reflected about a vertical axis in the middle of the plot. It turns out that we need to subtract both of their endpoints from the root age to fix this:
 
