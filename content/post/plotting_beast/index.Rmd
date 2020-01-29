@@ -10,11 +10,11 @@ image:
   focal_point: ""
 ---
 
-The summary of the posterior from a Bayesian tip-dating analysis -- e.g., the maximum clade credibility tree computed by TreeAnnotator from a BEAST 2 posterior -- usually provides a whole wealth of information to the user, and while barebones, quick-and-dirty plotting of the results using FigTree or `plot.phylo()` is good enough for assessing whether the results are reasonable or not, it definitely doesn't provide publication-quality figures. Below, I'll try to show how such figures can be made those by combining several existing R packages.
+The summary of the posterior from a Bayesian tip-dating analysis -- e.g., the maximum clade credibility tree computed by TreeAnnotator from a BEAST 2 posterior -- usually provides a whole wealth of information to the user, and while barebones, quick-and-dirty plotting of the results using FigTree or `plot.phylo()` is good enough for assessing whether the results are reasonable or not, it definitely doesn't provide publication-quality figures. Below, I'll try to show how such figures can be made by combining several existing R packages.
 
 ## Starting point: `strap`
 
-The `geoscalePhylo()` function from the `strap` package (Bell & Lloyd 2014) is well-known and widely used. It plots a time tree against a nice colorful timescale (the colors are the official color codes of the Commission for the Geological Map of the World), and includes other niceties inherited from `plot.phylo()`, such as automatically stripping tip names of underscores and printing them in italics. One of the nice options we have at our disposal with `geoscalePhylo()` is to visualize the uncertainty in the ages of not just the internal nodes (we do that below), but also the tips. We can do that using an age range table like the one below:
+The `geoscalePhylo()` function from the `strap` package (Bell & Lloyd 2014) is well-known and widely used. It plots a time tree against a nice colorful timescale (the colors are the official color codes of the Commission for the Geological Map of the World), and includes other niceties inherited from `plot.phylo()`, such as automatically stripping tip names of underscores and printing them in italics. One of the cool options we have at our disposal with `geoscalePhylo()` is to visualize the uncertainty in the ages of not just the internal nodes (we do that further down below), but also the tips. We can do that using an age range table like the one below:
 
 ```{r, message = FALSE, warning = FALSE}
 if(!require("kableExtra")) {install.packages("kableExtra")}
@@ -25,7 +25,7 @@ age_table <- read.table("~/age_ranges.txt", stringsAsFactors = F)
 head(age_table)
 ```
 
-We need to reshuffle our age range table a bit, since `geoscalePhylo()` needs a matrix whose first and last appearance dates are in the right order:
+We need to reshuffle our age range table a bit, since `geoscalePhylo()` needs a matrix whose first and last appearance dates are in the right order, and which has exactly the right column and row names:
 
 ```{r, fig.width = 10, fig.height = 10, message = FALSE, warning = FALSE}
 if(!require("phytools")) {install.packages("phytools")}
@@ -42,7 +42,7 @@ tree <- read.nexus("~/my_MCC_tree.tre")
 # geoscalePhylo() needs the $root.time element for plotting
 tree$root.time <- max(nodeHeights(tree)) + 66.0
 
-geoscalePhylo(tree, ages = my_ages, x.lim = c(20, 240), cex.tip = 0.7, cex.age = 1.3, cex.ts = 1)
+geoscalePhylo(ladderize(tree, right = F), ages = my_ages, x.lim = c(20, 240), cex.tip = 0.7, cex.age = 1.3, cex.ts = 1)
 ```
 
 Internally, `geoscalePhylo()` calls the `plot.phylo()` function bundled with `ape`, and so it accepts all of the latter's arguments. We can make use of this to highlight clades. 
@@ -74,9 +74,9 @@ tip.coloring <- function(tree, clade_list, group_cols) {
 }
 ```
 
-Here, we are assuming that the user specifies which color to assign to which clade, rather than creating the colors within the function itself. An additional step is involved when we need to filter the descendant nodes down to tips only: we could get rid of it by using a different function, like `Descendants()` from `phangorn` (Schliep 2010), which takes node type as an argument. Here, we exploit the fact that in many of the R packages dealing with phylogenetic trees, the labeling of the nodes assigns numbers from 1 to $n$ to the tips (leaves), $n+1$ to the root, and $n+2$ thru $2n-1$ to the remaining internal nodes. Conversely, we can count on the fact that nodes labeled with numbers less than or equal to $n$ are the tips.
+Here, we are assuming that the user specifies which color to assign to which clade, rather than creating the colors within the function itself. An additional step is involved when we need to filter the descendant nodes down to tips only: we could get rid of it by using a different function, like `Descendants()` from `phangorn` (Schliep 2010), which takes node type as an argument. Here, we exploit the fact that in many of the R packages dealing with phylogenetic trees, the default node labeling scheme assigns numbers from 1 to $n$ to the tips (leaves), $n+1$ to the root, and $n+2$ thru $2n-1$ to the remaining internal nodes. Conversely, we can count on the fact that nodes labeled with numbers less than or equal to $n$ are the tips.
 
-The step that consists of coloring all branches descended from the same MRCA is more involved. Fortunately, the indefatigable Liam Revell provided code that does just that in one of the posts on his excellent phytools blog:
+The step that consists of coloring all branches descended from the same MRCA is more involved. Fortunately, the indefatigable Liam Revell provides code that does just that in one of the posts on his excellent phytools blog:
 
 http://blog.phytools.org/2017/04/coloring-edges-of-plotted-trees-in.html
 
@@ -96,9 +96,9 @@ branch.coloring <- function(tree, clade_list, group_cols) {
 
 ## Adding HPDs: `phyloch` and weird loops
 
-The next thing we'd like to do than can't be done easily using any of the many available `geoscalePhylo` arguments is to add 95% highest posterior density (HPD) intervals to the nodes on our tree.
+The next thing we'd like to do than can't be easily done using any of the many available `geoscalePhylo` arguments is to add 95% highest posterior density (HPD) intervals to the nodes of our tree.
 
-The first step is to extract the needed information from the annotated Nexus file produced by TreeAnnotator. There used to be several options for parsing such files; my favorite one was probably `read.annotated.nexus()` from the `OutbreakTools` library (Jombart et al. 2014), which unfortunately seems to have lately fallen victim to package dependency troubles. Nevertheless, the `read.beast()` function from the `phyloch` package (Heibl 2013) provides a great alternative. Note that we might want to define a new "annotation" (more accurately, add a new element to the list by which the tree is internally represented in R) that doesn't care about how exactly we got our HPDs (from common ancestor heights? from median heights?) and that can be further manipulated:
+The first step is to extract the necessary information from the annotated Nexus file produced by TreeAnnotator. There used to be several options for parsing such files; my favorite one was probably `read.annotated.nexus()` from the `OutbreakTools` library (Jombart et al. 2014), which unfortunately seems to have lately fallen victim to package dependency troubles. Nevertheless, the `read.beast()` function from the `phyloch` package (Heibl 2013) provides a great alternative. Note that we might want to define a new "annotation" (more accurately, add a new element to the list by which the tree is internally represented in R) that doesn't care about how exactly we got our HPDs (from common ancestor heights? from median heights?) and that can be further manipulated:
 
 ```{r, message = FALSE, warning = FALSE}
 if(!require("phyloch")) {install.packages("phyloch")}
@@ -132,7 +132,7 @@ if (length(params$mean[params$statistic == "offset"] != 0)) {
 }
 ```
 
-The most complicated steps consists of using this info to actually draw the HPDs -- this is often done using half-transparent color bars -- around the nodes. The basis for what we are going to do is again provided by Liam Revell:
+The most complicated step consists of using this info to actually draw the HPDs -- this is often done using half-transparent color bars -- around the nodes. The basis for what we are going to do is again provided by Liam Revell:
 
 http://blog.phytools.org/2017/03/error-bars-on-divergence-times-on.html
 
@@ -140,7 +140,7 @@ However, as we see below, our attempt to simply reuse the code given in the blog
 
 ```{r, fig.width = 10, fig.height = 10}
 annot_tree$root.time <- max(nodeHeights(annot_tree)) + 66.0
-geoscalePhylo(annot_tree, x.lim = c(20, 240), cex.tip = 0.7, cex.age = 1.3, cex.ts = 1)
+geoscalePhylo(ladderize(annot_tree, right = F), x.lim = c(20, 240), cex.tip = 0.7, cex.age = 1.3, cex.ts = 1)
 
 T1 <- get("last_plot.phylo", envir = .PlotPhyloEnv)
 
@@ -157,7 +157,7 @@ Yes, our HPDs are clearly horrifyingly wide, but they are also not associated wi
 The answer is that the HPDs are reflected about a vertical axis in the middle of the plot. It turns out that we need to subtract both of their endpoints from the root age to fix this:
 
 ```{r, fig.width = 10, fig.height = 10}
-geoscalePhylo(annot_tree, x.lim = c(20, 240), cex.tip = 0.7, cex.age = 1.3, cex.ts = 1)
+geoscalePhylo(ladderize(annot_tree, right = F), x.lim = c(20, 240), cex.tip = 0.7, cex.age = 1.3, cex.ts = 1)
 
 T1 <- get("last_plot.phylo", envir = .PlotPhyloEnv)
 
@@ -173,7 +173,7 @@ Much better!
 
 ## Putting it all together
 
-Aside from what we went over above, the function below also parameterizes at what ages to start and stop plotting (so far we've used the fixed values of 20 and 240, respectively), automatically draws the right number of colors to highlight clades with from the good-looking `viridis` palette, and annotates notes with their posterior probabilities:
+Aside from what we went over above, the function below also parameterizes at what ages to start and stop plotting (so far we've used the fixed values of 20 and 240, respectively), automatically draws the right number of colors to highlight clades with from the good-looking `viridis` palette, and annotates nodes with their posterior probabilities:
 
 ```{r, message = FALSE, warning = FALSE}
 if(!require("viridis")) {install.packages("viridis")}
@@ -217,9 +217,10 @@ beast.plotter <- function(basepath, clade_list, xmin, xmax) {
   br_cols <- branch.coloring(base_tree, clade_list, clade_cols)
   tip_cols <- tip.coloring(base_tree, clade_list, clade_cols)
 
-  geoscalePhylo(tree = base_tree, ages = age_mat, units = c("Period", "Epoch", "Age"), 
-                boxes = "Epoch", cex.tip = 0.7, cex.age = 1.3, cex.ts = 1, width = 2,
-                x.lim = c(xmin, xmax), edge.color = br_cols, tip.color = tip_cols)
+  geoscalePhylo(tree = ladderize(base_tree, right = F), ages = age_mat,
+                units = c("Period", "Epoch", "Age"), boxes = "Epoch", cex.tip = 0.7,
+                cex.age = 1.3, cex.ts = 1, width = 2, x.lim = c(xmin, xmax),
+                edge.color = br_cols, tip.color = tip_cols)
   nodelabels(base_tree$node.label)
   T1 <- get("last_plot.phylo", envir = .PlotPhyloEnv)
   
