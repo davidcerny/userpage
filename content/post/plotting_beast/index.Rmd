@@ -42,7 +42,7 @@ tree <- read.nexus("~/my_MCC_tree.tre")
 # geoscalePhylo() needs the $root.time element for plotting
 tree$root.time <- max(nodeHeights(tree)) + 66.0
 
-geoscalePhylo(ladderize(tree, right = F), ages = my_ages, x.lim = c(20, 240), cex.tip = 0.7, cex.age = 1.3, cex.ts = 1)
+geoscalePhylo(ladderize(tree, right = F), ages = my_ages, x.lim = c(0, 240), cex.tip = 0.7, cex.age = 1.3, cex.ts = 1)
 ```
 
 Internally, `geoscalePhylo()` calls the `plot.phylo()` function bundled with `ape`, and so it accepts all of the latter's arguments. We can make use of this to highlight clades. 
@@ -173,7 +173,7 @@ Much better!
 
 ## Putting it all together
 
-Aside from what we went over above, the function below also parameterizes at what ages to start and stop plotting (so far we've used the fixed values of 20 and 240, respectively), automatically draws the right number of colors to highlight clades with from the good-looking `viridis` palette, and annotates nodes with their posterior probabilities:
+Aside from what we went over above, the function below also parameterizes at what ages to start and stop plotting (so far we've been using fixed values for these), automatically draws the right number of colors to highlight clades with from the good-looking `viridis` palette, and annotates nodes with their posterior probabilities:
 
 ```{r, message = FALSE, warning = FALSE}
 if(!require("viridis")) {install.packages("viridis")}
@@ -238,7 +238,7 @@ beast.plotter <- function(basepath, clade_list, xmin, xmax) {
 Let's try it out!
 
 ```{r, fig.width = 10, fig.height = 12}
-beast.plotter("~/", my_dino_list, 20, 240)
+beast.plotter("~/", my_dino_list, 10, 240)
 ```
 
 ## Refs
