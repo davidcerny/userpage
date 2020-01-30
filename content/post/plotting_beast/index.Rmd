@@ -14,7 +14,9 @@ The summary of the posterior from a Bayesian tip-dating analysis -- e.g., the ma
 
 ## Starting point: `strap`
 
-The `geoscalePhylo()` function from the `strap` package (Bell & Lloyd 2014) is well-known and widely used. It plots a time tree against a nice colorful timescale (the colors are the official color codes of the Commission for the Geological Map of the World), and includes other niceties inherited from `plot.phylo()`, such as automatically stripping tip names of underscores and printing them in italics. One of the cool options we have at our disposal with `geoscalePhylo()` is to visualize the uncertainty in the ages of not just the internal nodes (we do that further down below), but also the tips. We can do that using an age range table like the one below:
+The `geoscalePhylo()` function from the `strap` package (Bell & Lloyd 2014) is well-known and widely used. It plots a time tree against a nice colorful timescale (the colors are the official color codes of the Commission for the Geological Map of the World), and includes other niceties inherited from `plot.phylo()`, such as automatically stripping tip names of underscores and printing them in italics. One of the cool options we have at our disposal with `geoscalePhylo()` is to visualize the uncertainty in the ages of not just the internal nodes (we do that further down below), but also the tips.* We can do that using an age range table like the one below:
+
+**Note:** As pointed out on Facebook by David Bapst, the `ages` argument of `geoscalePhylo()` serves primarily for visualizing taxon durations in the fossil record; i.e., the time intervals between their first and last appearance. If a taxon is only known from a single stratigraphically unique occurrence, its first and last appearance will coincide; however, the age uncertainty associated with that appearance can still be usefully represented using a range. This is what we're doing below.
 
 ```{r, message = FALSE, warning = FALSE}
 if(!require("kableExtra")) {install.packages("kableExtra")}
@@ -76,9 +78,7 @@ tip.coloring <- function(tree, clade_list, group_cols) {
 
 Here, we are assuming that the user specifies which color to assign to which clade, rather than creating the colors within the function itself. An additional step is involved when we need to filter the descendant nodes down to tips only: we could get rid of it by using a different function, like `Descendants()` from `phangorn` (Schliep 2010), which takes node type as an argument. Here, we exploit the fact that in many of the R packages dealing with phylogenetic trees, the default node labeling scheme assigns numbers from 1 to $n$ to the tips (leaves), $n+1$ to the root, and $n+2$ thru $2n-1$ to the remaining internal nodes. Conversely, we can count on the fact that nodes labeled with numbers less than or equal to $n$ are the tips.
 
-The step that consists of coloring all branches descended from the same MRCA is more involved. Fortunately, the indefatigable Liam Revell provides code that does just that in one of the posts on his excellent phytools blog:
-
-http://blog.phytools.org/2017/04/coloring-edges-of-plotted-trees-in.html
+The step that consists of coloring all branches descended from the same MRCA is more involved. Fortunately, the indefatigable Liam Revell provides code that does just that in [one of the posts](http://blog.phytools.org/2017/04/coloring-edges-of-plotted-trees-in.html) on his excellent phytools blog.
 
 Here, we simply package that code into a function analogous to the one shown above:
 
@@ -132,9 +132,7 @@ if (length(params$mean[params$statistic == "offset"] != 0)) {
 }
 ```
 
-The most complicated step consists of using this info to actually draw the HPDs -- this is often done using half-transparent color bars -- around the nodes. The basis for what we are going to do is again provided by Liam Revell:
-
-http://blog.phytools.org/2017/03/error-bars-on-divergence-times-on.html
+The most complicated step consists of using this info to actually draw the HPDs -- this is often done using half-transparent color bars -- around the nodes. The basis for what we are going to do is again [provided by Liam Revell](http://blog.phytools.org/2017/03/error-bars-on-divergence-times-on.html):
 
 However, as we see below, our attempt to simply reuse the code given in the blog post does not produce satisfying results:
 
