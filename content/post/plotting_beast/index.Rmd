@@ -14,9 +14,9 @@ The summary of the posterior from a Bayesian tip-dating analysis -- e.g., the ma
 
 ## Starting point: `strap`
 
-The `geoscalePhylo()` function from the `strap` package (Bell & Lloyd 2014) is well-known and widely used. It plots a time tree against a nice colorful timescale (the colors are the official color codes of the Commission for the Geological Map of the World), and includes other niceties inherited from `plot.phylo()`, such as automatically stripping tip names of underscores and printing them in italics. One of the cool options we have at our disposal with `geoscalePhylo()` is to visualize the uncertainty in the ages of not just the internal nodes (we do that further down below), but also the tips.* We can do that using an age range table like the one below:
+The `geoscalePhylo()` function from the `strap` package (Bell & Lloyd 2014) is well-known and widely used. It plots a time tree against a nice colorful timescale (the colors are the official color codes of the Commission for the Geological Map of the World), and includes other niceties inherited from `plot.phylo()`, such as automatically stripping tip names of underscores and printing them in italics. One of the cool options we have at our disposal with `geoscalePhylo()` is to visualize the uncertainty in the ages of not just the internal nodes (we do that further down below), but also the tips. We can do that using an age range table like the one below:
 
-**Note:** As pointed out on Facebook by David Bapst, the `ages` argument of `geoscalePhylo()` serves primarily for visualizing taxon durations in the fossil record; i.e., the time intervals between their first and last appearance. If a taxon is only known from a single stratigraphically unique occurrence, its first and last appearance will coincide; however, the age uncertainty associated with that appearance can still be usefully represented using a range. This is what we're doing below.
+**Note:** As pointed out on Facebook by David Bapst, the `ages` argument of `geoscalePhylo()` serves primarily for visualizing taxon durations in the fossil record; i.e., the time intervals between the first and last appearance. If a taxon is only known from a single stratigraphically unique occurrence, its first and last appearance will coincide; however, the age uncertainty associated with that occurrence can still be usefully represented using a range. This is what we're doing below.
 
 ```{r, message = FALSE, warning = FALSE}
 age_table <- read.table("~/age_ranges.txt", stringsAsFactors = F)
@@ -26,7 +26,10 @@ head(age_table)
 We need to reshuffle our age range table a bit, since `geoscalePhylo()` needs a matrix whose first and last appearance dates are in the right order, and which has exactly the right column and row names:
 
 ```{r, fig.width = 10, fig.height = 10, message = FALSE, warning = FALSE}
-if(!require("phytools")) {install.packages("phytools")}
+if(!require("phytools")) {
+  install.packages("remotes")
+  remotes::install_github("fmichonneau/phyloch")
+}
 if(!require("strap")) {install.packages("strap")}
 library(phytools)
 library(strap)
